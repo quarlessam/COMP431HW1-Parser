@@ -43,6 +43,10 @@ def parse(x):
     if not re.compile(expression).match(x):
         return "ERROR -- element"
 
+    domain = x.split("@")[1].split(">")[0]
+    if not re.compile(DOMAIN + "$").match(domain):
+        return "ERROR -- element"
+
     expression += ">"
     if not re.compile(expression).match(x):
         return "ERROR -- path"
