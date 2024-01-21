@@ -10,8 +10,8 @@ def parse(x):
 
     ws = "[ \t]+"
     ns = "[ \t]*"
-    MAIL = "[Mm][Aa][Ii][Ll]"
-    FROM = "[Ff][Rr][Oo][Mm]:"
+    MAIL = "MAIL"
+    FROM = "FROM:"
     LOCAL = "[^ \t<>()\[\]\\.,;:@\"]+"
     DOMAIN = "([a-zA-Z][a-zA-Z0-9]*\.)*[a-zA-Z][a-zA-Z0-9]*"
 
