@@ -5,57 +5,73 @@ import sys
 import re
 
 def parse(x):
+    print(x, end = "")
+    y = x
+    if not re.compile('^MAIL.*FROM:.*').match(y):
+        raise UserWarning("mail-from-cmd")
+    y = re.split(r'^MAIL',y)[1]
+    y = whitespace(y)
+    y = re.split(r'^FROM:', y)[1]
+    y = nullspace(y)
+    y = path(y)
+    y = CRLF(y)
+    print("Sender ok")
 
-    print(x, end='')
+def whitespace(x):
+    if not re.compile('^[ \t]+').match(x):
+        raise UserWarning("whitespace")
+    return re.split(r'^[ \t]+', x)[1]
 
-    ws = "[ \t]+"
-    ns = "[ \t]*"
-    MAIL = "MAIL"
-    FROM = "FROM:"
-    LOCAL = "[^ \t<>()\[\]\\.,;:@\"]+"
-    DOMAIN = "([a-zA-Z][a-zA-Z0-9]*\.)*[a-zA-Z][a-zA-Z0-9]*"
+def nullspace(x):
+    if not re.compile('^[ \t]+').match(x):
+        return x
+    return re.split(r'^[ \t]+', x)[1]
 
-    expression = "^" + MAIL
-    if not re.compile(expression).match(x):
-        return "ERROR -- mail-from-cmd"
+def path(x):
+    y = x
+    if not re.compile('^<').match(y):
+        raise UserWarning("path")
+    y = re.split(r'^<', y)[1]
+    y = mailbox(y)
+    if not re.compile('^>').match(y):
+        raise UserWarning("path")
+    y = re.split(r'^>', y)[1]
+    return y
 
-    expression += ws
-    if not re.compile(expression).match(x):
-        return "ERROR -- whitespace"
+def mailbox(x):
+    y = x
+    y = local_part(y)
+    if not re.compile('^@').match(y):
+        raise UserWarning("mailbox")
+    y = re.split(r'^@', y)[1]
+    y = domain(y)
+    return y
 
-    expression += FROM
-    if not re.compile(expression).match(x):
-        return "ERROR -- mail-from-cmd"
+def local_part(x):
+    if not re.compile('^[^ \t<>()\[\]\\.,;:@\"]+').match(x):
+        raise UserWarning("string")
+    return re.split(r'^[^ \t<>()\[\]\\.,;:@\"]+', x)[1]
 
-    expression += ns + "<"
-    if not re.compile(expression).match(x):
-        return "ERROR -- path"
+def domain(x):
+    y = x
+    y = element(y)
+    while re.compile('^\.').match(y):
+        y = re.split(r'^\.', y)[1]
+        y = element(y)
+    return y
 
-    expression += LOCAL
-    if not re.compile(expression).match(x):
-        return "ERROR -- string"
+def element(x):
+    if not re.compile('^[a-zA-Z][a-zA-Z0-9]*').match(x):
+        raise UserWarning("element")
+    return re.split(r'^[a-zA-Z][a-zA-Z0-9]*', x)[1]
 
-    expression += "@"
-    if not re.compile(expression).match(x):
-        return "ERROR -- mailbox"
-
-    expression += DOMAIN
-    if not re.compile(expression).match(x):
-        return "ERROR -- element"
-
-    domain = x.split("@")[1].split(">")[0]
-    if not re.compile(DOMAIN + "$").match(domain):
-        return "ERROR -- element"
-
-    expression += ">"
-    if not re.compile(expression).match(x):
-        return "ERROR -- path"
-
-    expression += ns + "$"
-    if not re.compile(expression).match(x):
-        return "ERROR -- CRLF"
-
-    return "Sender ok"
+def CRLF(x):
+    if not re.compile('^[ \t]*$').match(x):
+        raise UserWarning("CRLF")
+    return x
 
 for line in sys.stdin:
-    print(parse(line))
+    try: parse(line)
+    except UserWarning as w:
+        errorMsg = "ERROR -- " + w.args[0]
+        print(errorMsg)
